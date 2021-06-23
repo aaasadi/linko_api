@@ -1,0 +1,13 @@
+server:
+  port: 8000
+db:
+  type: 'mysql'
+  host: 'localhost'
+  port: 3306
+  username: 'root'
+  password: ''
+  database: 'linko_prod'
+  synchronize: true
+jwt:
+  secretKey: 'my secret key'
+  expiresIn: '7d'
