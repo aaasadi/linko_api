@@ -17,7 +17,7 @@ export class LinkRepository extends Repository<Link> {
       relations: ['creator', 'group'],
       where: { creator: { id: user.id } },
     });
-    if (links.length < 1) throw new NotFoundException('Link not found');
+    // if (links.length < 1) throw new NotFoundException('Link not found');
     return links.map((link) => link.transform({ creator: true, group: true }));
   }
   /** Find Link by slug */

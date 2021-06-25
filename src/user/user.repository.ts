@@ -1,11 +1,11 @@
 import { EntityRepository, Repository } from 'typeorm';
 import { AuthCredentialDto } from './dto/authCredentialDto';
 import { UserEntity as User } from './user.entity';
+import * as generator from 'generate-password';
 import * as bcrypt from 'bcrypt';
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
@@ -18,38 +18,68 @@ export class UserRepository extends Repository<User> {
     if (!user) {
       throw new NotFoundException('User not found!');
     }
-    return user.transform();
+    return user;
   }
   /** Sing up User */
-  // async register(password: string): Promise<User> {
-  //   // let user = await this.findOne({ where: { email: await verify.email } });
-  //   // if (!user) {
-  //   //   user = this.create({ email: await verify.email });
-  //   // }
-  //   user.password = await this.hashPassword(password);
-  //   try {
-  //     await this.save(user);
-  //   } catch (error) {
-  //     if (error.code === 'ER_DUP_ENTRY')
-  //       throw new ConflictException('Email already registered');
-  //     throw new InternalServerErrorException();
-  //   }
-  //   return user.transform();
-  // }
+  async register(authCredentialDto: AuthCredentialDto): Promise<User> {
+    const { email, password } = authCredentialDto;
+    const user = new User();
+    user.email = email;
+    user.password = await this.hashPassword(password);
+    user.verifyID = await this.setVerifyID();
+    try {
+      await this.save(user);
+    } catch (error) {
+      if (error.code === 'ER_DUP_ENTRY')
+        throw new ConflictException('Email already registered');
+      throw new InternalServerErrorException();
+    }
+    return user;
+  }
   /** Sing in User */
   async login(authCredentialDto: AuthCredentialDto): Promise<User> {
     const { email, password } = authCredentialDto;
     const user = await this.findOne({ email });
+    if (!user) throw new BadRequestException('Username/Password is invalid');
     const isValidPassword = await this.comparePassword(password, user.password);
-    if (!user || !isValidPassword)
+    if (!isValidPassword)
       throw new BadRequestException('Username/Password is invalid');
     return user.transform({ token: true });
   }
+  /** verify email address */
+  async verifyEmail(user: User): Promise<void> {
+    user.verified = true;
+    try {
+      await this.save(user);
+    } catch (err) {
+      throw new InternalServerErrorException();
+    }
+  }
+  /** user recovery */
+  async recovery(user_id, newPassword, verify_id) {
+    const user = await this.findUser(user_id);
+    if (user.verifyID !== verify_id)
+      throw new BadRequestException('Bad Request');
+    user.password = await this.hashPassword(newPassword);
+    user.verifyID = this.setVerifyID();
+    try {
+      await this.save(user);
+    } catch (err) {
+      throw new InternalServerErrorException();
+    }
+    return user.transform();
+  }
 
   private async hashPassword(password: string): Promise<string> {
-    return await bcrypt.hash(password, 10);
+    return bcrypt.hash(password, 10);
   }
-  private async comparePassword(password, hash): Promise<boolean> {
-    return await bcrypt.compare(password, hash);
+  private async comparePassword(
+    password: string,
+    hash: string,
+  ): Promise<boolean> {
+    return bcrypt.compare(password, hash);
+  }
+  private setVerifyID(): string {
+    return generator.generate({ length: 16, numbers: true });
   }
 }

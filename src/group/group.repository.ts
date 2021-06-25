@@ -22,8 +22,8 @@ export class GroupRepository extends Repository<Group> {
         return group.owner.id === user.id;
       });
     }
-    if (groupsOfUser.length < 1)
-      throw new NotFoundException('No Group registerd for User');
+    // if (groupsOfUser.length < 1)
+    //   throw new NotFoundException('No Group registerd for User');
     return groupsOfUser.map((group) =>
       group.transform({ owner: true, links: true }),
     );

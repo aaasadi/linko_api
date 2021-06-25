@@ -22,17 +22,23 @@ export class UserEntity extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ nullable: true })
+  name: string;
+
   @Column()
   email: string;
 
   @Column()
   password: string;
 
-  @Column({ default: Roles.user })
-  role: Roles;
-
   @Column({ default: false })
   verified: boolean;
+
+  @Column()
+  verifyID: string;
+
+  @Column({ default: Roles.consumer })
+  role: Roles;
 
   @CreateDateColumn()
   created_at: Date;
@@ -56,9 +62,18 @@ export class UserEntity extends BaseEntity {
   }
 
   async transform(optoin: Option = { token: false }): Promise<UserEntity> {
-    const { id, email, created_at, update_at } = this;
+    const { id, name, email, role, verified, created_at, update_at } = this;
     const token = await this.getToken();
-    const result: any = { id, email, token, created_at, update_at };
+    const result: any = {
+      id,
+      name,
+      email,
+      role,
+      verified,
+      token,
+      created_at,
+      update_at,
+    };
     if (!optoin.token) delete result.token;
     return result;
   }

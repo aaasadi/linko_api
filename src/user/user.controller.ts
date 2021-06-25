@@ -3,30 +3,61 @@ import {
   Controller,
   Get,
   Post,
+  Param,
   UseGuards,
   ValidationPipe,
+  Redirect,
 } from '@nestjs/common';
 import { User } from 'src/common/decorators/auth.decorator';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { UserService } from './user.service';
+import { EmailService } from 'src/email/email.service';
 import { AuthCredentialDto } from './dto/authCredentialDto';
 import { UserRO } from './ro/user.ro';
 
 @Controller('user')
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    private emailService: EmailService,
+  ) {}
 
-  // @Post('/register')
-  // register(@Body() body): Promise<UserRO> {
-  //   const { verifyId, password } = body;
-  //   return this.userService.register(verifyId, password);
-  // }
+  @Post('/register')
+  async register(@Body() authCredentialDto: AuthCredentialDto) {
+    const user = await this.userService.register(authCredentialDto);
+    await this.emailService.verifyEmail(user.email, user.id, user.verifyID);
+    return user;
+  }
 
   @Post('/login')
-  login(
+  async login(
     @Body(ValidationPipe) authCredentialDto: AuthCredentialDto,
   ): Promise<UserRO> {
-    return this.userService.login(authCredentialDto);
+    return await this.userService.login(authCredentialDto);
+  }
+
+  @Get('/verify/:user_id/:verify_id')
+  @Redirect('http://localhost:3000/panel/login')
+  async verify(@Param() param) {
+    const { user_id, verify_id } = param;
+    await this.userService.verifyEmail(user_id, verify_id);
+  }
+
+  @Post('/forget_password')
+  async forgetPassword(@Body('email') email: string) {
+    const { id, verifyID } = await this.userService.forgetPassword(email);
+    try {
+      await this.emailService.recoveryEmail(email, id, verifyID);
+    } catch (err) {
+      console.log(err);
+    }
+    return { message: 'email send', success: true };
+  }
+
+  @Post('/recovery')
+  async recovery(@Body() body) {
+    const { user_id, newPassword, verify_id } = body;
+    return await this.userService.recovery(user_id, newPassword, verify_id);
   }
 
   @Get('/info')
