@@ -12,6 +12,7 @@ async function bootstrap() {
   app.enableCors({ origin: '*' });
   // public files config
   app.useStaticAssets(join(__dirname, '..', 'public'));
+  app.useStaticAssets(join(__dirname, '..', 'uploads'));
   // view engin config
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
   hbs.registerPartials(join(__dirname, '..', 'views', 'components'));

@@ -31,6 +31,9 @@ export class UserEntity extends BaseEntity {
   @Column()
   password: string;
 
+  @Column()
+  avatar: string;
+
   @Column({ default: false })
   verified: boolean;
 
@@ -62,12 +65,14 @@ export class UserEntity extends BaseEntity {
   }
 
   async transform(optoin: Option = { token: false }): Promise<UserEntity> {
-    const { id, name, email, role, verified, created_at, update_at } = this;
+    const { id, name, email, role, verified, avatar, created_at, update_at } =
+      this;
     const token = await this.getToken();
     const result: any = {
       id,
       name,
       email,
+      avatar,
       role,
       verified,
       token,

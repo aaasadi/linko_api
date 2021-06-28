@@ -18,7 +18,6 @@ export class GroupRepository extends Repository<Group> {
     });
     if (user) {
       groupsOfUser = groupsOfUser.filter((group) => {
-        console.log(group);
         return group.owner.id === user.id;
       });
     }

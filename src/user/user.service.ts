@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthCredentialDto } from './dto/authCredentialDto';
+import { changePasswordDto } from './dto/changePasswordDto';
+import { editProfileDto } from './dto/editProfileDto';
 import { UserRO } from './ro/user.ro';
 import { UserRepository } from './user.repository';
 
@@ -42,5 +44,18 @@ export class UserService {
   /** Recovery Account */
   async recovery(user_id, newPassword, verify_id) {
     return this.userRepository.recovery(user_id, newPassword, verify_id);
+  }
+  /** Edit Profile data */
+  async editProfile(user_id, data: editProfileDto) {
+    const user = await this.userRepository.findUser(user_id);
+    return this.userRepository.editProfile(user, data);
+  }
+  /** get user info */
+  getInfo(user_id: string) {
+    return this.userRepository.findUser(user_id);
+  }
+  async changePassword(user_id: string, data: changePasswordDto) {
+    const user = await this.userRepository.findUser(user_id);
+    return await this.userRepository.changePassword(user, data);
   }
 }

@@ -7,6 +7,9 @@ import {
   UseGuards,
   ValidationPipe,
   Redirect,
+  Put,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { User } from 'src/common/decorators/auth.decorator';
 import { AuthGuard } from 'src/common/guards/auth.guard';
@@ -14,6 +17,9 @@ import { UserService } from './user.service';
 import { EmailService } from 'src/email/email.service';
 import { AuthCredentialDto } from './dto/authCredentialDto';
 import { UserRO } from './ro/user.ro';
+import { editProfileDto } from './dto/editProfileDto';
+import { changePasswordDto } from './dto/changePasswordDto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('user')
 export class UserController {
@@ -62,7 +68,21 @@ export class UserController {
 
   @Get('/info')
   @UseGuards(AuthGuard)
-  info(@User() user) {
-    return { user };
+  async info(@User('id') user_id) {
+    const user = await this.userService.getInfo(user_id);
+
+    return { user: await user.transform() };
+  }
+
+  @Put('/edit')
+  @UseGuards(AuthGuard)
+  editProfile(@User('id') userId, @Body() data: editProfileDto) {
+    return this.userService.editProfile(userId, data);
+  }
+
+  @Put('/change_password')
+  @UseGuards(AuthGuard)
+  changePassword(@User('id') userId, @Body() data: changePasswordDto) {
+    return this.userService.changePassword(userId, data);
   }
 }

@@ -9,6 +9,8 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { editProfileDto } from './dto/editProfileDto';
+import { changePasswordDto } from './dto/changePasswordDto';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -62,6 +64,34 @@ export class UserRepository extends Repository<User> {
       throw new BadRequestException('Bad Request');
     user.password = await this.hashPassword(newPassword);
     user.verifyID = this.setVerifyID();
+    try {
+      await this.save(user);
+    } catch (err) {
+      throw new InternalServerErrorException();
+    }
+    return user.transform();
+  }
+  /** edit profile data */
+  async editProfile(user: User, data: editProfileDto): Promise<User> {
+    const { name, avatar } = data;
+    if (data.name) user.name = name;
+    if (data.avatar) user.avatar = avatar;
+    try {
+      await this.save(user);
+    } catch (err) {
+      throw new BadRequestException();
+    }
+    return user.transform();
+  }
+  /** Change Password */
+  async changePassword(user: User, data: changePasswordDto): Promise<User> {
+    const { current_password, new_password } = data;
+    const isValidPassword = await this.comparePassword(
+      current_password,
+      user.password,
+    );
+    if (!isValidPassword) throw new BadRequestException();
+    user.password = await this.hashPassword(new_password);
     try {
       await this.save(user);
     } catch (err) {
